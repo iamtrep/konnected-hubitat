@@ -14,31 +14,40 @@
  *
  */
 metadata {
-  definition (name: "Konnected Motion Sensor", namespace: "konnected-io", author: "konnected.io", mnmn: "SmartThings", vid:"generic-motion") {
-    capability "Motion Sensor"
-    capability "Sensor"
-  }
+    definition (name: "Konnected Motion Sensor", namespace: "konnected-io", author: "konnected.io", mnmn: "SmartThings", vid:"generic-motion") {
+        capability "Motion Sensor"
+        capability "Sensor"
+    }
 
-  preferences {
-    input name: "normalState", type: "enum", title: "Normal State",
-      options: ["Normally Closed", "Normally Open"],
-      defaultValue: "Normally Closed",
-      description: "Most motion sensors are Normally Closed (NC), meaning that the circuit opens when motion is detected. To reverse this logic, select Normally Open (NO)."
-  }
+    preferences {
+        input name: "normalState", type: "enum", title: "Normal State",
+            options: ["Normally Closed", "Normally Open"],
+            defaultValue: "Normally Closed",
+            description: "Most motion sensors are Normally Closed (NC), meaning that the circuit opens when motion is detected. To reverse this logic, select Normally Open (NO)."
+        input name: "infoLogging", type: "bool", title: "Description Text Logging", defaultValue: true, description:"Log motion events"
+        input name: "debugLogging", type: "bool", title: "Debug Logging", defaultValue: false, submitOnChange: true
+        if (debugLogging) {
+            runIn(30, logsOff)
+        }
+    }
 
 }
 
 def isClosed() {
-  normalState == "Normally Open" ? "active" : "inactive"
+    normalState == "Normally Open" ? "active" : "inactive"
 }
 
 def isOpen() {
-  normalState == "Normally Open" ? "inactive" : "active"
+    normalState == "Normally Open" ? "inactive" : "active"
 }
 
 // Update state sent from parent app
 def setStatus(state) {
-  def stateValue = state == "1" ? isOpen() : isClosed()
-  sendEvent(name: "motion", value: stateValue)
-  log.info "$device.label is $stateValue"
+    def stateValue = state == "1" ? isOpen() : isClosed()
+    sendEvent(name: "motion", value: stateValue, descriptionText: "${device.displayName} is $stateValue" )
+    if (infoLogging) log.info "${device.displayName} is $stateValue"
+}
+
+def logsOff() {
+    device.updateSetting('debugLogging', false)
 }
